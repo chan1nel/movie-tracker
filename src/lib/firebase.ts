@@ -21,7 +21,16 @@ let db: any;
 let provider: any;
 
 try {
-  if (typeof window !== "undefined" || (process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID)) {
+  const isBrowser = typeof window !== "undefined";
+  const hasEnvVars = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+                    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
+                    process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "Empty";
+
+  if (isBrowser || hasEnvVars) {
+    if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY === "Empty") {
+      console.warn("Firebase API Key is set to 'Empty'. Please check your Vercel environment variables.");
+    }
+    
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
     db = initializeFirestore(app, {
@@ -30,7 +39,7 @@ try {
     provider = new GoogleAuthProvider();
   }
 } catch (error) {
-  console.error("Firebase initialization skipped or failed:", error);
+  console.error("Firebase initialization failed:", error);
 }
 
 export { app, auth, db, provider };
