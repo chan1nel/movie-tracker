@@ -22,21 +22,41 @@ let provider: any;
 
 try {
   const isBrowser = typeof window !== "undefined";
-  const hasEnvVars = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
-                    process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "Empty";
+  
+  // Helper to check if a variable is defined and not a placeholder
+  const isValid = (val: string | undefined) => !!val && val !== "Empty";
 
-  if (isBrowser || hasEnvVars) {
-    if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY === "Empty") {
-      console.warn("Firebase API Key is set to 'Empty'. Please check your Vercel environment variables.");
+  const hasCriticalVars = isValid(process.env.NEXT_PUBLIC_FIREBASE_API_KEY) && 
+                         isValid(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+
+  if (isBrowser || hasCriticalVars) {
+    // Check for "Empty" placeholders and warn if found
+    const envVars = {
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+    };
+
+    const emptyVars = Object.entries(envVars)
+      .filter(([_, value]) => value === "Empty")
+      .map(([key]) => key);
+
+    if (emptyVars.length > 0) {
+      console.warn(`Firebase configuration is incomplete. The following variables are set to 'Empty': ${emptyVars.join(", ")}. Please check your Vercel environment variables.`);
     }
     
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    auth = getAuth(app);
-    db = initializeFirestore(app, {
-      experimentalForceLongPolling: true,
-    });
-    provider = new GoogleAuthProvider();
+    // Only initialize if we have at least an API key that isn't "Empty"
+    if (isValid(process.env.NEXT_PUBLIC_FIREBASE_API_KEY)) {
+      app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+      auth = getAuth(app);
+      db = initializeFirestore(app, {
+        experimentalForceLongPolling: true,
+      });
+      provider = new GoogleAuthProvider();
+    }
   }
 } catch (error) {
   console.error("Firebase initialization failed:", error);
