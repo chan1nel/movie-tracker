@@ -3,38 +3,34 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: "🏠" },
-  { href: "/timeline",  label: "Timeline",  icon: "📖" },
-  { href: "/dna",       label: "Film DNA",  icon: "🧬" },
-  { href: "/couple",    label: "Couple",     icon: "💕" },
-];
-
 export default function NavBar() {
   const pathname = usePathname();
 
+  const links = [
+    { href: "/dashboard", label: "Dashboard", emoji: "🏠" },
+    { href: "/timeline", label: "Timeline", emoji: "⏳" },
+    { href: "/dna", label: "Cinema DNA", emoji: "🧬" },
+    { href: "/couple", label: "Couple Space", emoji: "💕" },
+  ];
+
   return (
-    <nav className="w-full max-w-6xl mx-auto mb-8">
-      <div className="flex items-center gap-1 p-1 rounded-2xl"
-           style={{background: 'rgba(255,255,255,0.4)', border: '1px solid var(--glass-border)', backdropFilter: 'blur(12px)'}}>
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all
-                ${isActive 
-                  ? 'bg-white/70 text-[var(--purple-deep)] shadow-sm' 
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/30'
-                }`}
-            >
-              <span className="text-base">{item.icon}</span>
-              <span className="hidden sm:inline">{item.label}</span>
-            </Link>
-          );
-        })}
-      </div>
+    <nav className="flex items-center gap-1 mb-10 overflow-x-auto pb-2 scrollbar-hide">
+      {links.map((link) => {
+        const isActive = pathname === link.href;
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap
+              ${isActive 
+                ? 'bg-white text-[var(--purple-deep)] shadow-sm border border-[var(--purple-soft)] translate-y-[-1px]' 
+                : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/40'}`}
+          >
+            <span>{link.emoji}</span>
+            {link.label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }
