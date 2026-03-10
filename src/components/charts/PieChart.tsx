@@ -1,101 +1,62 @@
 "use client";
 
-interface PieSlice {
-  label: string;
-  value: number;
-  color: string;
-}
-
 interface PieChartProps {
-  data: PieSlice[];
+  data: { label: string; value: number; color: string }[];
+  title: string;
   size?: number;
-  title?: string;
 }
 
-export default function PieChart({ data, size = 220, title }: PieChartProps) {
-  const total = data.reduce((sum, d) => sum + d.value, 0);
+export default function PieChart({ data, title, size = 200 }: PieChartProps) {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  let currentAngle = 0;
+
   if (total === 0) return null;
-
-  const cx = size / 2;
-  const cy = size / 2;
-  const radius = size / 2 - 8;
-
-  let cumulativeAngle = -90; // Start from top
-
-  const slices = data.map((d) => {
-    const percentage = d.value / total;
-    const angle = percentage * 360;
-    const startAngle = cumulativeAngle;
-    const endAngle = cumulativeAngle + angle;
-    cumulativeAngle = endAngle;
-
-    const startRad = (startAngle * Math.PI) / 180;
-    const endRad = (endAngle * Math.PI) / 180;
-
-    const x1 = cx + radius * Math.cos(startRad);
-    const y1 = cy + radius * Math.sin(startRad);
-    const x2 = cx + radius * Math.cos(endRad);
-    const y2 = cy + radius * Math.sin(endRad);
-
-    const largeArcFlag = angle > 180 ? 1 : 0;
-
-    // Label position (midpoint of arc)
-    const midAngle = ((startAngle + endAngle) / 2) * Math.PI / 180;
-    const labelRadius = radius * 0.65;
-    const labelX = cx + labelRadius * Math.cos(midAngle);
-    const labelY = cy + labelRadius * Math.sin(midAngle);
-
-    return {
-      ...d,
-      percentage,
-      path: `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`,
-      labelX,
-      labelY,
-    };
-  });
 
   return (
     <div className="flex flex-col items-center">
-      {title && <p className="editorial-label mb-3">{title}</p>}
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="drop-shadow-sm">
-        {slices.map((s, i) => (
-          <g key={i}>
-            <path
-              d={s.path}
-              fill={s.color}
-              stroke="white"
-              strokeWidth="2"
-              className="transition-all duration-300 hover:opacity-80"
-              style={{
-                filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.1))',
-                transformOrigin: `${cx}px ${cy}px`,
-              }}
-            >
-              <title>{s.label}: {(s.percentage * 100).toFixed(1)}%</title>
-            </path>
-            {s.percentage > 0.08 && (
-              <text
-                x={s.labelX} y={s.labelY}
-                textAnchor="middle" dominantBaseline="middle"
-                fill="white" fontSize="10" fontWeight="600"
-                style={{pointerEvents: 'none', textShadow: '0 1px 3px rgba(0,0,0,0.3)'}}
-              >
-                {(s.percentage * 100).toFixed(0)}%
-              </text>
-            )}
-          </g>
-        ))}
-        {/* Inner circle for donut look */}
-        <circle cx={cx} cy={cy} r={radius * 0.38} fill="white" opacity="0.9" />
-      </svg>
-      {/* Legend */}
-      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 mt-4 max-w-xs">
-        {slices.map((s, i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full" style={{background: s.color}} />
-            <span className="text-xs text-[var(--text-secondary)]">{s.label}</span>
+      <p className="editorial-label mb-6 text-center">{title}</p>
+      
+      <div className="flex flex-col md:flex-row items-center gap-10">
+        <div className="relative" style={{ width: size, height: size }}>
+          <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full drop-shadow-lg">
+            {data.map((item, i) => {
+              const startAngle = currentAngle;
+              const angle = (item.value / total) * 360;
+              currentAngle += angle;
+              
+              const x1 = 50 + 50 * Math.cos((startAngle * Math.PI) / 180);
+              const y1 = 50 + 50 * Math.sin((startAngle * Math.PI) / 180);
+              const x2 = 50 + 50 * Math.cos(((startAngle + angle) * Math.PI) / 180);
+              const y2 = 50 + 50 * Math.sin(((startAngle + angle) * Math.PI) / 180);
+              const largeArcFlag = angle > 180 ? 1 : 0;
+
+              return (
+                <path
+                  key={i}
+                  d={`M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArcFlag} 1 ${x2} ${y2} Z`}
+                  fill={item.color}
+                  className="hover:scale-[1.05] transition-transform origin-center cursor-pointer"
+                  style={{ transitionDelay: `${i * 50}ms` }}
+                />
+              );
+            })}
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-[60%] h-[60%] bg-white rounded-full shadow-inner flex items-center justify-center">
+                <span className="display-heading text-2xl text-[var(--purple-deep)]">{total}</span>
+            </div>
           </div>
-        ))}
+        </div>
+
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+          {data.map((item, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+              <span className="text-[0.65rem] text-[var(--text-muted)] truncate max-w-[100px]">{item.label}</span>
+              <span className="text-[0.65rem] font-bold text-[var(--text-secondary)]">{Math.round((item.value / total) * 100)}%</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
