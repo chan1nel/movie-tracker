@@ -39,6 +39,7 @@ export interface MovieDetails {
 
 export async function getMovieDetails(tmdbId: number): Promise<MovieDetails | null> {
   try {
+    // Fetch movie details and credits in parallel
     const [detailsRes, creditsRes] = await Promise.all([
       fetch(`${BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=zh-CN`),
       fetch(`${BASE_URL}/movie/${tmdbId}/credits?api_key=${TMDB_API_KEY}&language=zh-CN`)
@@ -47,17 +48,25 @@ export async function getMovieDetails(tmdbId: number): Promise<MovieDetails | nu
     const details = await detailsRes.json();
     const credits = await creditsRes.json();
 
+    // Extract genres
     const genres: string[] = (details.genres || []).map((g: any) => g.name);
+
+    // Extract production countries
     const countries: string[] = (details.production_countries || []).map((c: any) => c.name);
+
+    // Extract director from crew
     const directorEntry = (credits.crew || []).find((c: any) => c.job === "Director");
     const director: string = directorEntry?.name || "Unknown";
+
+    // Extract primary language
     const language: string = details.original_language || "unknown";
 
+    // Calculate decade from release date
     let decade = "Unknown";
     if (details.release_date) {
       const year = parseInt(details.release_date.substring(0, 4));
       if (!isNaN(year)) {
-        decade = `${Math.floor(year / 10) * 10}0s`;
+        decade = `${Math.floor(year / 10) * 10}s`;
       }
     }
 
