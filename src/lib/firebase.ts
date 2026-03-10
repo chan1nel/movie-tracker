@@ -14,15 +14,23 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase App globally
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Initialize Firebase App globally with guards for build-time environments
+let app;
+let auth: any;
+let db: any;
+let provider: any;
 
-// Initialize Firebase services
-const auth = getAuth(app);
-// Use experimentalForceLongPolling to fix "stuck" Firebase requests in some Next.js local environments
-const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-});
-const provider = new GoogleAuthProvider();
+try {
+  if (typeof window !== "undefined" || (process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID)) {
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
+    db = initializeFirestore(app, {
+      experimentalForceLongPolling: true,
+    });
+    provider = new GoogleAuthProvider();
+  }
+} catch (error) {
+  console.error("Firebase initialization skipped or failed:", error);
+}
 
 export { app, auth, db, provider };
